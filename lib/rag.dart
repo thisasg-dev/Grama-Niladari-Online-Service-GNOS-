@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:math' show min;
 
 // සටහන: මෙම ෆයිල් ඔබේ ප්‍රොජෙක්ට් එකේ තිබිය යුතුය.
 // නැතිනම් මේවා වෙනුවට Placeholder එකක් භාවිතා කරන්න.
@@ -46,13 +45,13 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      // FastAPI Backend සඳහා නිවැරදි URL එක සහ Body එක
+      // Gradio API එක සඳහා නිවැරදි URL එක සහ Body එක
       final response = await http
           .post(
-            Uri.parse('https://sanketh2002-gnos-rag-bot.hf.space/ask'),
+            Uri.parse('https://sanketh2002-gnos-rag-bot.hf.space/api/predict'),
             headers: {"Content-Type": "application/json"},
             body: jsonEncode({
-              "query": text, // FastAPI backend expects 'query' field
+              "data": [text], // පණිවිඩය data array එකක් ලෙස යැවිය යුතුය
             }),
           )
           .timeout(
@@ -62,10 +61,9 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // FastAPI backend සාමාන්‍යයෙන් පිළිතුර එවන්නේ 'answer' field එකේ
-        String botResponse =
-            (data['answer'] != null && data['answer'].isNotEmpty)
-            ? data['answer'].toString()
+        // Gradio සාමාන්‍යයෙන් පිළිතුර එවන්නේ 'data' array එකේ පළමු index එක ලෙසයි
+        String botResponse = (data['data'] != null && data['data'].isNotEmpty)
+            ? data['data'][0].toString()
             : "සමාවන්න, පිළිතුරක් ලැබුණේ නැත.";
 
         setState(() {
@@ -76,10 +74,8 @@ class _ChatScreenState extends State<ChatScreen> {
           });
         });
       } else {
-        // Enhanced error debugging
-        String errorMsg = _getErrorMessage(response.statusCode, response.body);
-        _showError(errorMsg);
-        debugPrint("HTTP ${response.statusCode} Error Body: ${response.body}");
+        _showError("සර්වර් දෝෂයකි: ${response.statusCode}");
+        debugPrint("Error Body: ${response.body}");
       }
     } catch (e) {
       debugPrint("Error: $e");
@@ -98,37 +94,6 @@ class _ChatScreenState extends State<ChatScreen> {
         "isInitial": false,
       });
     });
-  }
-
-  String _getErrorMessage(int statusCode, String responseBody) {
-    switch (statusCode) {
-      case 404:
-        return "❌ සර්වර් අක්‍රිය ඉහල ගිය ඉවත (404)\n\n"
-            "Backend සර්වරය ක්‍රියා නොකරයි.\n\n"
-            "✓ Backend deploy කර ඇතිද පරීක්ෂා කරන්න:\n"
-            "- HF Space සැකසීම් පරීක්ෂා කරන්න\n"
-            "- API keys එක්කර ඇතිද බලන්න\n"
-            "- 'Restart' හෝ 'Rebuild' ක්ලික් කරන්න";
-      
-      case 500:
-        return "❌ Backend දෝෂයකි (500)\n\n"
-            "සර්වරයේ අভ්‍යන්තර දෝෂයකි.\n"
-            "Backend logs පරීක්ෂා කරන්න.";
-      
-      case 422:
-        return "❌ Invalid request format (422)\n\n"
-            "ඉල්ලුම්ගේ ගොනුව වැරදිය.\n"
-            "Backend සමඟ ඔත්තු කරන්න.";
-      
-      case 503:
-        return "❌ සර්වරය ඉවසා ඇත (503)\n\n"
-            "Backend දෝෂයට ලක්ව ඇත.\n"
-            "කෙටි වේලාවෙන් නැවත උත්සාහ කරන්න.";
-      
-      default:
-        return "❌ HTTP Error: $statusCode\n\n"
-            "Response: ${responseBody.substring(0, min(responseBody.length, 100))}";
-    }
   }
 
   void _scrollToBottom() {
