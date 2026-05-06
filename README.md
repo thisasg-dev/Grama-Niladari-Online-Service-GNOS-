@@ -43,6 +43,30 @@ flutter run -d emulator-5554
 flutter run -d chrome
 ```
 
+## Terminal Commands (Quick Reference)
+```bash
+# Clone
+git clone https://github.com/thisasg-dev/Grama-Niladari-Online-Service-GNOS-.git
+
+# Install dependencies
+flutter pub get
+
+# List devices
+flutter devices
+
+# Run on Android emulator
+flutter run -d emulator-5554
+
+# Run on Chrome
+flutter run -d chrome
+
+# Git update
+git status
+git add .
+git commit -m "Update project"
+git push
+```
+
 ## Common Issues
 - If the emulator is not detected, wait until it finishes booting, then re-run flutter devices.
 - If Gradle errors mention Java version, ensure Java 17 is installed and selected.
