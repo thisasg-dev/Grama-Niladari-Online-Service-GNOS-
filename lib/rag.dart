@@ -62,7 +62,8 @@ class _ChatScreenState extends State<ChatScreen> {
         final data = jsonDecode(response.body);
 
         // FastAPI backend සාමාන්‍යයෙන් පිළිතුර එවන්නේ 'answer' field එකේ
-        String botResponse = (data['answer'] != null && data['answer'].isNotEmpty)
+        String botResponse =
+            (data['answer'] != null && data['answer'].isNotEmpty)
             ? data['answer'].toString()
             : "සමාවන්න, පිළිතුරක් ලැබුණේ නැත.";
 
