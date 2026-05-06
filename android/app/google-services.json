@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "701838962355",
+    "firebase_url": "https://gnos-app-default-rtdb.firebaseio.com",
+    "project_id": "gnos-app",
+    "storage_bucket": "gnos-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:701838962355:android:d6e9bf25dec90297b48ac6",
+        "android_client_info": {
+          "package_name": "com.example.my_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvmUTUzn1lrnRYn16glVOVV02POhMgUek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:701838962355:android:d24e8b76d892f1ebb48ac6",
+        "android_client_info": {
+          "package_name": "com.gov.gnos.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvmUTUzn1lrnRYn16glVOVV02POhMgUek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
