@@ -45,13 +45,13 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      // Gradio API එක සඳහා නිවැරදි URL එක සහ Body එක
+      // FastAPI Backend සඳහා නිවැරදි URL එක සහ Body එක
       final response = await http
           .post(
-            Uri.parse('https://sanketh2002-gnos-rag-bot.hf.space/api/predict'),
+            Uri.parse('https://sanketh2002-gnos-rag-bot.hf.space/ask'),
             headers: {"Content-Type": "application/json"},
             body: jsonEncode({
-              "data": [text], // පණිවිඩය data array එකක් ලෙස යැවිය යුතුය
+              "query": text, // FastAPI backend expects 'query' field
             }),
           )
           .timeout(
@@ -61,9 +61,9 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Gradio සාමාන්‍යයෙන් පිළිතුර එවන්නේ 'data' array එකේ පළමු index එක ලෙසයි
-        String botResponse = (data['data'] != null && data['data'].isNotEmpty)
-            ? data['data'][0].toString()
+        // FastAPI backend සාමාන්‍යයෙන් පිළිතුර එවන්නේ 'answer' field එකේ
+        String botResponse = (data['answer'] != null && data['answer'].isNotEmpty)
+            ? data['answer'].toString()
             : "සමාවන්න, පිළිතුරක් ලැබුණේ නැත.";
 
         setState(() {

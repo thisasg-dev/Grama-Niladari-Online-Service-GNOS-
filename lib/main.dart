@@ -143,6 +143,12 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _nicController,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your NIC.';
+                            }
+                            return null;
+                          },
                           decoration: InputDecoration(
                             hintText: "e.g. 199012345678",
                             hintStyle: const TextStyle(color: Colors.black26),
@@ -181,6 +187,12 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your password.';
+                            }
+                            return null;
+                          },
                           obscureText: true,
                           decoration: const InputDecoration(
                             hintText: "............",
@@ -238,6 +250,9 @@ class _LoginPageState extends State<LoginPage> {
                           height: 55,
                           child: ElevatedButton(
                             onPressed: () {
+                              if (_formKey.currentState?.validate() != true) {
+                                return;
+                              }
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(builder: (context) => home()),
