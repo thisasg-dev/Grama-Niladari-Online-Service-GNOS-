@@ -1,54 +1,3 @@
-"""
-GNOS RAG Bot - v6.0 (GEMINI PRIMARY + GROQ FALLBACK)
-═══════════════════════════════════════════════════════════════════
-MAJOR CHANGES from v5.7:
-
-1. GEMINI IS NOW PRIMARY (was fallback before)
-   WHY: gemini-2.5-flash has far better Sinhala & Tamil support
-        than LLaMA. Google trained on much more South Asian data.
-        Also 1M tokens/day free vs 100k for Groq.
-
-2. GROQ IS NOW FALLBACK (was primary before)
-   WHY: Still very fast for English. Good safety net.
-        Used when Gemini hits rate limits.
-
-3. FIXED GEMINI TOOL CALL BUG
-   BUG: Bot was saying "I will search govlk_search(...)" as TEXT
-        instead of actually calling the tool.
-   FIX: Use response.function_calls (official SDK method) instead
-        of manually checking parts[].function_call
-        Also disabled automatic_function_calling so we control it.
-
-4. GEMINI ANSWERS SINHALA/TAMIL NATIVELY
-   OLD: LLM answers in English → Google Translate → Sinhala/Tamil
-        (translation errors creep in)
-   NEW: Gemini answers directly in Sinhala/Tamil
-        (much more accurate, natural phrasing)
-   NOTE: Groq still uses Google Translate (LLaMA is English-first)
-
-PROVIDER CHAIN:
-  Gemini Key_1  (1M tokens/day)   ← PRIMARY
-  Gemini Key_2  (1M tokens/day)   ← Gemini fallback (optional)
-  Groq Key_1    (100k tokens/day) ← Secondary fallback
-  Groq Key_2    (100k tokens/day) ← Tertiary fallback
-  Groq Key_3    (100k tokens/day) ← Last resort
-  ─────────────────────────────────────────────────
-  TOTAL: ~2.3M tokens/day FREE
-
-.env file:
-  GEMINI_API_KEY_1=AIzaSy...   ← primary Gemini (aistudio.google.com)
-  GEMINI_API_KEY_2=AIzaSy...   ← optional second Gemini account
-  GROQ_API_KEY_1=gsk_...       ← fallback Groq account 1
-  GROQ_API_KEY_2=gsk_...       ← fallback Groq account 2
-  GROQ_API_KEY_3=gsk_...       ← fallback Groq account 3
-  HF_TOKEN=hf_...              ← HuggingFace (optional)
-
-Install:
-  pip install google-genai groq ddgs sentence-transformers
-  pip install faiss-cpu langchain-community langdetect
-  pip install deep-translator python-docx python-pptx pypdf
-═══════════════════════════════════════════════════════════════════
-"""
 
 import os
 import re
@@ -150,7 +99,7 @@ def rotate_gemini() -> bool:
     global _gemini_idx
     if _gemini_idx + 1 < len(GEMINI_CLIENTS):
         _gemini_idx += 1
-        print(f"  🔄 Rotated to {GEMINI_CLIENTS[_gemini_idx][1]}")
+        print(f"   Rotated to {GEMINI_CLIENTS[_gemini_idx][1]}")
         return True
     return False
 
@@ -194,7 +143,7 @@ def rotate_groq() -> bool:
     global _groq_idx
     if _groq_idx + 1 < len(GROQ_CLIENTS):
         _groq_idx += 1
-        print(f"  🔄 Rotated to {GROQ_CLIENTS[_groq_idx][1]}")
+        print(f"   Rotated to {GROQ_CLIENTS[_groq_idx][1]}")
         return True
     return False
 
@@ -252,7 +201,7 @@ def get_cached(q: str):
 
 def set_cached(q: str, ans: str):
     _answer_cache[_ckey(q)] = (ans, time.time())
-    print(f"  💾 Cached ({CACHE_TTL}s TTL)")
+    print(f"   Cached ({CACHE_TTL}s TTL)")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -308,7 +257,7 @@ def must_use_web(q: str) -> bool:
     ql = q.lower()
     for kw in FORCE_WEB_KEYWORDS:
         if kw in ql:
-            print(f"  🔴 FORCE WEB: '{kw}'")
+            print(f"   FORCE WEB: '{kw}'")
             return True
     return False
 
@@ -410,7 +359,7 @@ def extract_wait(err: str) -> int:
 # TOOL IMPLEMENTATIONS
 # ═══════════════════════════════════════════════════════════════════
 def tool_web_search(query: str) -> str:
-    print(f"  🌐 web_search: {repr(query)}")
+    print(f"   web_search: {repr(query)}")
     results, seen = [], set()
     try:
         time.sleep(0.5)
@@ -429,11 +378,11 @@ def tool_web_search(query: str) -> str:
     if not results: return f"No results for: {query}"
     c = "\n\n---\n\n".join(results)
     if len(c) > MAX_SEARCH_CHARS: c = c[:MAX_SEARCH_CHARS] + "\n[truncated]"
-    print(f"  ✓ {len(results)} results")
+    print(f"   {len(results)} results")
     return c
 
 def tool_govlk_search(query: str) -> str:
-    print(f"  🏛️  govlk_search: {repr(query)}")
+    print(f"    govlk_search: {repr(query)}")
     year, all_r, seen = get_year(), [], set()
     for sf, sn in GOVLK_SOURCES:
         try:
@@ -449,16 +398,16 @@ def tool_govlk_search(query: str) -> str:
                         if href: e += f"\n(URL: {href})"
                         all_r.append(e)
         except Exception as ex:
-            print(f"  ⚠ {sn}: {ex}")
+            print(f"   {sn}: {ex}")
     if all_r:
         c = "\n\n---\n\n".join(all_r)
         if len(c) > MAX_SEARCH_CHARS: c = c[:MAX_SEARCH_CHARS] + "\n[truncated]"
         return f"[Source: Official Sri Lanka Government — gov.lk]\n\n{c}"
-    print(f"  ⚠ gov.lk empty → DuckDuckGo")
+    print(f"   gov.lk empty → DuckDuckGo")
     return tool_web_search(query)
 
 def tool_search_documents(query: str) -> str:
-    print(f"  📄 search_documents: {repr(query)}")
+    print(f"   search_documents: {repr(query)}")
     try:
         qe   = translate_to_english(query)
         qemb = np.array(embedding_model.encode([qe])).astype("float32")
@@ -571,13 +520,13 @@ def build_prompt(answer_language: str,
     force_block = ""
     if force_govlk:
         force_block = (
-            f"\n⚠ MANDATORY: Sri Lanka government question. "
+            f"\n MANDATORY: Sri Lanka government question. "
             f"Call govlk_search FIRST with year {year}. "
             f"NEVER answer from training memory.\n"
         )
     elif force_web:
         force_block = (
-            f"\n⚠ MANDATORY: Current info needed. "
+            f"\n MANDATORY: Current info needed. "
             f"Call web_search FIRST with year {year}. "
             f"NEVER answer from training memory.\n"
         )
@@ -660,7 +609,7 @@ def gemini_agentic(question: str,
     model = GEMINI_PRIMARY_MODEL
 
     for round_num in range(MAX_TOOL_ROUNDS):
-        print(f"  🔮 Gemini round {round_num+1}/{MAX_TOOL_ROUNDS} | {model}")
+        print(f"   Gemini round {round_num+1}/{MAX_TOOL_ROUNDS} | {model}")
 
         response = get_gemini_client().models.generate_content(
             model=model,
@@ -680,7 +629,7 @@ def gemini_agentic(question: str,
             for fc in response.function_calls:
                 fn_name = fc.name
                 fn_args = dict(fc.args) if fc.args else {}
-                print(f"  🔮 Tool: {fn_name}({fn_args})")
+                print(f"   Tool: {fn_name}({fn_args})")
                 result = dispatch(fn_name, fn_args)
                 tool_response_parts.append(
                     gtypes.Part.from_function_response(
@@ -700,7 +649,7 @@ def gemini_agentic(question: str,
             final = (response.text or "").strip()
             if not final:
                 final = "I was unable to find a clear answer. Please try rephrasing."
-            print(f"  🔮 Gemini answer ({len(final)} chars)")
+            print(f"   Gemini answer ({len(final)} chars)")
             return final
 
     return "I searched but could not compose a complete answer. Please try a more specific question."
@@ -895,8 +844,8 @@ def rag_pipeline(question: str) -> str:
     print(f"\n{'═'*55}")
     print(f"  Lang        : {answer_language}")
     print(f"  Q           : {english_q}")
-    print(f"  Type        : {'LIVE 🔴' if live_q else 'STATIC 📄'}")
-    print(f"  Gov.lk first: {'YES 🏛️' if force_govlk else 'no'}")
+    print(f"  Type        : {'LIVE ' if live_q else 'STATIC '}")
+    print(f"  Gov.lk first: {'YES ' if force_govlk else 'no'}")
     print(f"{'═'*55}")
 
     # Check cache
@@ -926,7 +875,7 @@ def rag_pipeline(question: str) -> str:
                 break
             except Exception as e:
                 err = str(e)
-                print(f"  ⚠ Gemini error: {err[:80]}")
+                print(f"   Gemini error: {err[:80]}")
                 if "429" in err or "quota" in err.lower() or "rate" in err.lower():
                     if rotate_gemini():
                         time.sleep(2)
@@ -943,9 +892,9 @@ def rag_pipeline(question: str) -> str:
         try:
             raw_answer  = groq_agentic(english_q, groq_prompt, history)
             used_gemini = False
-            print(f"  ✓ Groq answer ({len(raw_answer)} chars)")
+            print(f"   Groq answer ({len(raw_answer)} chars)")
         except Exception as e:
-            print(f"  ⚠ Groq also failed: {e}")
+            print(f"   Groq also failed: {e}")
 
     # ── All providers failed ──────────────────────────────────────
     if raw_answer is None:

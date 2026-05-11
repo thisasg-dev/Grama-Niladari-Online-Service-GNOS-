@@ -31,3 +31,4 @@ groq
 langdetect
 deep-translator
 ddgs
+gradio
